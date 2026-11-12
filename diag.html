@@ -25,7 +25,7 @@
 <body>
 <h1>Diagnóstico do comando</h1>
 <p>Mexe nos dois manípulos, no D-pad e carrega em todos os botões, um de cada vez. Primeiro assim como está; depois carrega em
-“Ecrã inteiro”, mantém ☰ premido, escolhe “Use game controls” no menu e repete. Uma fotografia deste ecrã em cada caso chega.</p>
+“Ecrã inteiro”, mantém ☰ premido (ou carrega nele), escolhe “Use game controls” se aparecer, e repete. Uma fotografia deste ecrã em cada caso chega.</p>
 <button id="fs" type="button">Ecrã inteiro</button>
 <button id="clr" type="button">Limpar</button>
 <div id="verdict">À espera de entradas…</div>
@@ -40,7 +40,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var keyLog = [], seen = { pad: false, vk: false, arrows: false, keys: false, mouse: false };
-  var m = { moves: 0, dx: 0, dy: 0, x: 0, y: 0, downs: 0, lastBtn: '-', wheels: 0, lastWheel: '-' };
+  var m = { moves: 0, dx: 0, dy: 0, x: 0, y: 0, downs: 0, lastBtn: '-', wheels: 0, lastWheel: '-', ctx: 0 };
   function logKey(type, e) {
     var kc = e.keyCode || e.which || 0;
     keyLog.unshift(type + '  key="' + e.key + '"  code="' + e.code + '"  keyCode=' + kc);
@@ -49,12 +49,13 @@
     else if (/^Arrow/.test(e.key || '') || (kc >= 37 && kc <= 40)) seen.arrows = true;
     else seen.keys = true;
     $('keys').textContent = keyLog.join('\n');
-    if (type === 'down' && !/^F\d+$/.test(e.key || '')) e.preventDefault();
+    if (type === 'down' && (/^Arrow/.test(e.key || '') || e.key === ' ')) e.preventDefault(); // só para a página não deslizar
   }
   window.addEventListener('keydown', function (e) { logKey('down', e); });
   window.addEventListener('keyup', function (e) { logKey('up  ', e); });
   document.addEventListener('mousemove', function (e) { m.moves++; m.dx += e.movementX || 0; m.dy += e.movementY || 0; m.x = e.clientX; m.y = e.clientY; seen.mouse = true; });
   document.addEventListener('mousedown', function (e) { m.downs++; m.lastBtn = e.button; });
+  document.addEventListener('contextmenu', function () { m.ctx++; keyLog.unshift('** contextmenu (pedido de menu de contexto)'); $('keys').textContent = keyLog.join('\n'); });
   window.addEventListener('wheel', function (e) { m.wheels++; m.lastWheel = Math.round(e.deltaX) + ', ' + Math.round(e.deltaY); }, { passive: true });
   $('fs').addEventListener('click', function () {
     try { var el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (err) { /* opcional */ }
@@ -77,7 +78,7 @@
       out.push('#' + i + ' "' + p.id + '"\nmapping="' + p.mapping + '" eixos=' + p.axes.length + ' botões=' + p.buttons.length + '\neixos: ' + ax.join('  ') + '\nbotões premidos: ' + (bt.length ? bt.join(', ') : 'nenhum'));
     }
     $('pads').textContent = err || (n ? out.join('\n\n') : 'nenhum comando visível para a página (' + pads.length + ' posições)');
-    $('mouse').textContent = 'movimentos: ' + m.moves + '  (soma dx=' + m.dx + ', dy=' + m.dy + ')\nposição: ' + m.x + ', ' + m.y + '\ncliques: ' + m.downs + '  (último botão: ' + m.lastBtn + ')\nroda/scroll: ' + m.wheels + '  (último: ' + m.lastWheel + ')';
+    $('mouse').textContent = 'movimentos: ' + m.moves + '  (soma dx=' + m.dx + ', dy=' + m.dy + ')\nposição: ' + m.x + ', ' + m.y + '\ncliques: ' + m.downs + '  (último botão: ' + m.lastBtn + ')\nroda/scroll: ' + m.wheels + '  (último: ' + m.lastWheel + ')\npedidos de menu de contexto: ' + m.ctx;
     $('env').textContent = 'userAgent: ' + navigator.userAgent + '\n"Xbox" no userAgent: ' + /Xbox/i.test(navigator.userAgent) +
       '\necrã inteiro: ' + !!document.fullscreenElement + '\njanela: ' + window.innerWidth + ' x ' + window.innerHeight + '  (dpr ' + window.devicePixelRatio + ')' +
       '\nfoco na página: ' + document.hasFocus();

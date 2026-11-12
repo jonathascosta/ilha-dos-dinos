@@ -15,7 +15,7 @@
   });
 
   var keys = {}, pressed = {}, mouseDX = 0, mouseDY = 0, mouseBtn = [false, false, false], mousePressed = [false, false, false];
-  var wheel = 0, canvas = null, dragLook = false, dragMoved = 0, dragBtn = -1, lockFailed = false;
+  var wheel = 0, canvas = null, dragLook = false, dragMoved = 0, dragBtn = -1, lockFailed = false, lastRightDown = 0;
 
   G.initInput = function (cv) {
     canvas = cv;
@@ -24,7 +24,7 @@
       if (kc >= 195 && kc <= 218) { // comando entregue como "teclas de comando" (VK_GAMEPAD_*)
         if (!vk[kc]) vkHit[kc] = true;
         vk[kc] = true; vkSeen = true;
-        e.preventDefault();
+        if (kc !== 207 && kc !== 208) e.preventDefault(); // Menu e Vista ficam para o browser (troca de modo do Edge)
         return;
       }
       var code = codeOf(e);
@@ -45,6 +45,7 @@
       else if (dragLook) { mouseDX += e.movementX || 0; mouseDY += e.movementY || 0; dragMoved += Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0); }
     });
     canvas.addEventListener('mousedown', function (e) {
+      if (e.button === 2) lastRightDown = Date.now();
       if (G.isXbox) return; // na Xbox o "rato" é o cursor do comando
       if (G.state !== 'play') return;
       if (I.locked) { if (e.button < 3) { mouseBtn[e.button] = true; mousePressed[e.button] = true; } I.lastDevice = 'keys'; }
@@ -59,7 +60,12 @@
         if (dragMoved < 6 && dragBtn >= 0 && dragBtn < 3) mousePressed[dragBtn] = true; // clique sem arrastar
       }
     });
-    canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    // Só se esconde o menu de contexto de um clique direito a sério (PC). Na Xbox, manter ☰ premido
+    // pede este menu ao browser, e é nele que está a opção "Use game controls": não pode ser bloqueado.
+    canvas.addEventListener('contextmenu', function (e) {
+      I.contextMenus = (I.contextMenus || 0) + 1;
+      if (!G.isXbox && (I.locked || Date.now() - lastRightDown < 800)) e.preventDefault();
+    });
     window.addEventListener('wheel', function (e) { if (G.state === 'play') wheel += e.deltaY > 0 ? 1 : -1; }, { passive: true });
     document.addEventListener('pointerlockchange', function () {
       I.locked = document.pointerLockElement === canvas;
