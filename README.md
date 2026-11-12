@@ -47,15 +47,19 @@ O jogo é uma pasta de ficheiros estáticos. Qualquer alojamento serve. Duas for
 1. Abrir o **Microsoft Edge** na consola.
 2. Escrever o endereço do passo 2 e guardar nos favoritos.
 3. Com o cursor, carregar no botão grande de jogar (botão **A**). O jogo passa a ecrã inteiro.
-4. **Manter o botão ☰ (Menu) premido** até o Edge passar o comando para o jogo
-   (a opção aparece como "usar controlos de jogo" ou semelhante). O aviso no topo do ecrã
-   desaparece quando o jogo começa a receber o comando.
+4. **Manter o botão ☰ (Menu) premido** até abrir um menu do Edge, escolher **Use game controls**
+   (usar controlos de jogo) com o manípulo esquerdo e carregar em **A**. O aviso no topo do ecrã
+   desaparece quando o jogo começa a receber o comando. Para voltar ao cursor, manter ☰ premido outra vez.
+
+Sem o passo 4 o Edge fica em modo de navegação e só entrega setas ao jogo: o manípulo esquerdo ou o D-pad
+andam para a frente e para trás e rodam para os lados, o que dá para passear mas não para olhar para cima e para baixo.
 
 A gravação fica no browser da consola, associada ao endereço. Limpar os dados do Edge apaga a ilha.
 
 ### Se algo correr mal na consola
 
-- **O comando só mexe o cursor:** falta o passo 4 (manter ☰ premido).
+- **O comando só anda e roda, ou só mexe o cursor:** falta o passo 4 (☰ premido → Use game controls → A).
+- **Para ver o que a consola envia ao jogo:** abrir o endereço terminado em `diag.html`, mexer no comando e fotografar o ecrã.
 - **Lento:** o jogo baixa sozinho a resolução e a distância de visão quando a imagem fica abaixo de ~28 fps.
   Para ver os números, abrir o endereço terminado em `#fps` (ou tecla F3 no PC).
 - **Ecrã preto ou erro de gráficos:** fechar e reabrir o Edge (o WebGL do Edge da Xbox por vezes precisa de reinício).
@@ -65,8 +69,8 @@ A gravação fica no browser da consola, associada ao endereço. Limpar os dados
 
 | Ação | Comando Xbox | Teclado e rato |
 |---|---|---|
-| Andar | Manípulo esquerdo | W A S D |
-| Olhar | Manípulo direito | Rato (ou setas) |
+| Andar | Manípulo esquerdo | W A S D (ou setas ↑ ↓) |
+| Olhar | Manípulo direito | Rato (setas ← → rodam, PageUp / PageDown sobem e descem a vista) |
 | Saltar / subir / nadar | A | Espaço |
 | Pôr bloco | RT | Botão direito (ou X) |
 | Tirar bloco | LT | Botão esquerdo (ou Z) |
@@ -124,6 +128,7 @@ Para os pais: abrir o endereço terminado em `#nivel=12` começa nesse nível (�
 
 ```
 index.html      página
+diag.html       diagnóstico do comando (mostra o que o browser entrega)
 style.css       interface
 js/world.js     blocos e geração da ilha
 js/render.js    malhas, céu, resolução

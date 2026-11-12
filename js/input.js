@@ -20,13 +20,26 @@
   G.initInput = function (cv) {
     canvas = cv;
     window.addEventListener('keydown', function (e) {
-      if (!keys[e.code]) pressed[e.code] = true;
-      keys[e.code] = true;
-      I.lastDevice = 'keys';
-      if (G.state === 'play' && /^(Space|Arrow|Tab|Key[WASDEFQR]|Digit)/.test(e.code)) e.preventDefault();
+      var kc = e.keyCode || e.which || 0;
+      if (kc >= 195 && kc <= 218) { // comando entregue como "teclas de comando" (VK_GAMEPAD_*)
+        if (!vk[kc]) vkHit[kc] = true;
+        vk[kc] = true; vkSeen = true;
+        e.preventDefault();
+        return;
+      }
+      var code = codeOf(e);
+      if (!keys[code]) pressed[code] = true;
+      keys[code] = true;
+      if (!/^Arrow|^Enter$/.test(code)) I.lastDevice = 'keys'; // setas e Enter também vêm do comando na Xbox
+      else I.arrowsUsed = true;
+      if (G.state === 'play' && /^(Space|Arrow|Tab|Enter|Page|Key[WASDEFQR]|Digit)/.test(code)) e.preventDefault();
     });
-    window.addEventListener('keyup', function (e) { keys[e.code] = false; });
-    window.addEventListener('blur', function () { keys = {}; mouseBtn = [false, false, false]; });
+    window.addEventListener('keyup', function (e) {
+      var kc = e.keyCode || e.which || 0;
+      if (kc >= 195 && kc <= 218) { vk[kc] = false; return; }
+      keys[codeOf(e)] = false;
+    });
+    window.addEventListener('blur', function () { keys = {}; vk = {}; mouseBtn = [false, false, false]; });
     document.addEventListener('mousemove', function (e) {
       if (I.locked) { mouseDX += e.movementX || 0; mouseDY += e.movementY || 0; }
       else if (dragLook) { mouseDX += e.movementX || 0; mouseDY += e.movementY || 0; dragMoved += Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0); }
@@ -64,6 +77,17 @@
     } catch (e) { lockFailed = true; }
   };
 
+  // teclas sem "code" (acontece com teclas emuladas pelo comando): deduz pelo nome ou pelo número
+  var KEYCODES = { 13: 'Enter', 27: 'Escape', 32: 'Space', 33: 'PageUp', 34: 'PageDown', 37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown' };
+  function codeOf(e) {
+    if (e.code) return e.code;
+    var k = e.key || '';
+    if (/^Arrow|^Enter$|^Escape$|^Page/.test(k)) return k;
+    if (k === ' ') return 'Space';
+    return KEYCODES[e.keyCode || e.which || 0] || ('Key' + k.toUpperCase());
+  }
+  var vk = {}, vkHit = {}, vkSeen = false;
+
   var prevB = [], prevAxis = { l: 0, r: 0, u: 0, d: 0 }, uiRepeat = 0;
   function dz(v) { var a = Math.abs(v); if (a < 0.2) return 0; return (v < 0 ? -1 : 1) * (a - 0.2) / 0.8; }
   function btn(gp, i) { var b = gp.buttons[i]; return !!b && (b.pressed || b.value > 0.4); }
@@ -92,14 +116,19 @@
     var lx = 0, ly = 0;
     var SENS = 0.0024;
     lx -= mouseDX * SENS; ly -= mouseDY * SENS; mouseDX = mouseDY = 0;
+    // setas: esquerda/direita rodam, cima/baixo andam. Assim joga-se só com um manípulo ou D-pad
+    // quando o browser entrega o comando como setas (modo de navegação do Edge na Xbox).
     var ak = 1.9 * dt;
-    if (keys.ArrowLeft) lx += ak; if (keys.ArrowRight) lx -= ak;
-    if (keys.ArrowUp) ly += ak * 0.7; if (keys.ArrowDown) ly -= ak * 0.7;
-    var jump = !!keys.Space, down = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyC);
+    if (!vkSeen) {
+      if (keys.ArrowLeft) lx += ak; if (keys.ArrowRight) lx -= ak;
+      if (keys.ArrowUp) mz = 1; if (keys.ArrowDown) mz = -1;
+    }
+    if (keys.PageUp) ly += ak * 0.7; if (keys.PageDown) ly -= ak * 0.7;
+    var jump = !!(keys.Space || keys.Enter), down = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyC);
     var dig = mouseBtn[0] || !!keys.KeyZ, place = mouseBtn[2] || !!keys.KeyX;
     if (mousePressed[0] || pressed.KeyZ) I.digPressed = true;
     if (mousePressed[2] || pressed.KeyX) I.placePressed = true;
-    if (pressed.Space) I.jumpPressed = true;
+    if (pressed.Space || pressed.Enter) I.jumpPressed = true;
     if (pressed.KeyF) I.flyPressed = true;
     if (pressed.KeyE) I.interactPressed = true;
     if (pressed.Escape || pressed.KeyP) I.menuPressed = true;
@@ -119,12 +148,23 @@
     // ----- comando -----
     var gp = findPad();
     I.padActive = false;
+    var sx = 0, sy = 0, rx = 0, ry = 0, b = [], i;
+    for (i = 0; i < 17; i++) b[i] = false;
     if (gp) {
       I.padSeen = true;
       var ax = gp.axes || [];
-      var sx = dz(ax[0] || 0), sy = dz(ax[1] || 0), rx = dz(ax[2] || 0), ry = dz(ax[3] || 0);
-      var b = [];
-      for (var i = 0; i < 17; i++) b[i] = btn(gp, i);
+      sx = dz(ax[0] || 0); sy = dz(ax[1] || 0); rx = dz(ax[2] || 0); ry = dz(ax[3] || 0);
+      for (i = 0; i < 17; i++) b[i] = btn(gp, i);
+    }
+    if (vkSeen) {
+      // A B X Y RB LB LT RT | D-pad | Menu | cliques dos manípulos | manípulo esq. | manípulo dir.
+      var VB = [[195, 0], [196, 1], [197, 2], [198, 3], [199, 5], [200, 4], [201, 6], [202, 7], [203, 12], [204, 13], [205, 14], [206, 15], [207, 9], [209, 10], [210, 11]];
+      for (i = 0; i < VB.length; i++) if (vk[VB[i][0]]) b[VB[i][1]] = true;
+      if (vk[211]) sy = -1; if (vk[212]) sy = 1; if (vk[213]) sx = 1; if (vk[214]) sx = -1;
+      if (vk[215]) ry = -0.8; if (vk[216]) ry = 0.8; if (vk[217]) rx = 0.8; if (vk[218]) rx = -0.8;
+      vkHit = {};
+    }
+    if (gp || vkSeen) {
       var any = sx || sy || rx || ry;
       for (i = 0; i < 17; i++) if (b[i]) any = true;
       if (any) { I.padActive = true; I.lastDevice = 'pad'; I.padUsed = true; }
@@ -143,7 +183,7 @@
       if (hit(0)) I.jumpPressed = true;
       if (hit(3)) I.flyPressed = true;
       if (hit(2)) I.interactPressed = true;
-      if (hit(9) || hit(8)) I.menuPressed = true;
+      if (hit(9)) I.menuPressed = true; // o botão Vista (8) fica de fora: no Edge da Xbox tira o foco à página
       if (hit(5) || hit(15)) I.nextPressed = true;
       if (hit(4) || hit(14)) I.prevPressed = true;
       // navegação nos menus (com repetição no manípulo)
