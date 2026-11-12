@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Ilha dos Dinos</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" tabindex="0"></canvas>
+<div id="water" hidden></div>
+
+<div id="hud" hidden>
+  <div id="cross"></div>
+  <div id="mission">
+    <div id="lvl" aria-label="Nível"><span id="lvlnum">1</span></div>
+    <img id="micon" alt="">
+    <div id="mdots" class="dots"></div>
+    <div id="compass" hidden><svg id="compassarrow" viewBox="0 0 32 32"><path d="M16 3 27 22h-7v7h-8v-7H5z" fill="#ffd23c" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  </div>
+  <div id="flybadge" hidden>
+    <svg viewBox="0 0 48 32" width="64" height="42"><path d="M4 24c0-6 5-10 10-9 1-7 8-11 14-8 5-3 13 1 12 8 4 1 5 9-2 9z" fill="#fff"/></svg>
+  </div>
+  <div id="hint" hidden><span id="hintkey">X</span><span id="hinticon"></span></div>
+  <div id="triggers">
+    <div class="trig"><span class="key" id="keyDig">LT</span>
+      <svg viewBox="0 0 32 32" width="34" height="34"><rect x="5" y="9" width="18" height="18" rx="2" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 4"/><path d="M27 5 17 15M27 5v7M27 5h-7" stroke="#ffd23c" stroke-width="3.2" fill="none" stroke-linecap="round" transform="rotate(180 22 10)"/></svg>
+    </div>
+    <div class="trig"><span class="key" id="keyPlace">RT</span>
+      <svg viewBox="0 0 32 32" width="34" height="34"><rect x="5" y="9" width="18" height="18" rx="2" fill="#ffd23c" stroke="#fff" stroke-width="3"/><path d="M26 2v10M21 7h10" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+  <div id="hotbar"></div>
+  <div id="fps" hidden></div>
+</div>
+
+<div id="levelup" hidden><div class="burst"><span id="lunum">2</span></div></div>
+<div id="unlock" hidden><div class="gift"><div id="unlockicons"></div></div></div>
+
+<div id="xboxtip" hidden>
+  <span class="menuglyph">&#9776;</span>
+  <span>Mantém o botão ☰ premido para passar o comando para o jogo</span>
+</div>
+
+<div id="start">
+  <div class="panel">
+    <h1><span>Ilha</span> <span>dos</span> <span>Dinos</span></h1>
+    <button id="play" type="button" aria-label="Jogar">
+      <svg viewBox="0 0 100 100" width="110" height="110"><path d="M36 22 L80 50 L36 78 Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="legend">
+      <div>
+        <h2>Comando Xbox</h2>
+        <ul>
+          <li><b>Manípulo esquerdo</b> andar</li>
+          <li><b>Manípulo direito</b> olhar</li>
+          <li><b>A</b> saltar / subir</li>
+          <li><b>RT</b> pôr bloco · <b>LT</b> tirar bloco</li>
+          <li><b>LB / RB</b> escolher bloco</li>
+          <li><b>X</b> festinhas / montar dinossauro</li>
+          <li><b>Y</b> voar · <b>B</b> descer</li>
+          <li><b>☰</b> menu (inclui saltar a missão)</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Teclado e rato</h2>
+        <ul>
+          <li><b>W A S D</b> andar · <b>rato</b> olhar</li>
+          <li><b>Espaço</b> saltar / subir</li>
+          <li><b>Botão direito</b> pôr · <b>esquerdo</b> tirar</li>
+          <li><b>Roda</b> ou <b>Q / R</b> escolher bloco</li>
+          <li><b>E</b> festinhas / montar</li>
+          <li><b>F</b> voar · <b>Shift</b> descer</li>
+          <li><b>Esc</b> menu</li>
+        </ul>
+      </div>
+    </div>
+    <p class="xboxsteps"><b>Na Xbox:</b> carrega em jogar com o botão A e depois mantém o botão ☰ premido para passar o comando para o jogo.</p>
+  </div>
+</div>
+
+<div id="pause" hidden>
+  <div class="menu">
+    <button type="button" data-act="resume" aria-label="Continuar">
+      <svg viewBox="0 0 100 100"><path d="M38 26 L76 50 L38 74 Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" data-act="home" aria-label="Voltar à cabana">
+      <svg viewBox="0 0 100 100"><path d="M50 20 L84 50 H74 V80 H58 V60 H42 V80 H26 V50 H16 Z" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" data-act="sound" aria-label="Som">
+      <svg viewBox="0 0 100 100"><path d="M22 40 H36 L54 26 V74 L36 60 H22 Z" fill="#fff" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><g id="soundwaves" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M64 38 Q72 50 64 62"/><path d="M73 30 Q87 50 73 70"/></g><path id="soundoff" d="M64 38 L82 62 M82 38 L64 62" stroke="#fff" stroke-width="7" stroke-linecap="round" hidden/></svg>
+    </button>
+    <button type="button" data-act="skip" aria-label="Saltar esta missão">
+      <svg viewBox="0 0 100 100"><path d="M22 28 L50 50 L22 72 Z M50 28 L78 50 L50 72 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><path d="M84 28 V72" stroke="#fff" stroke-width="9" stroke-linecap="round"/></svg>
+    </button>
+    <button type="button" data-act="new" class="danger" aria-label="Ilha nova (manter premido)">
+      <svg viewBox="0 0 100 100"><path d="M18 66 Q50 30 82 66 Z" fill="#fff"/><path d="M10 70 H90" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M70 14 v20 M60 24 h20" stroke="#fff" stroke-width="6" stroke-linecap="round"/><circle class="ring" cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90 50 50)"/></svg>
+    </button>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/world.js"></script>
+<script src="js/render.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/creatures.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
